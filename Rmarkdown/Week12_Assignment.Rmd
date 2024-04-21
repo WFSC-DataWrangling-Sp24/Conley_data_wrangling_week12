@@ -50,6 +50,8 @@ I recommend copying the commented code and making changes to the copy. That way,
 a.  The code below prints the numbers 1 through 5 one line at a time. Modify it to print each of these numbers multiplied by 3.
 
 ```{r}
+library(tidyverse)
+
 numbers <- c(1, 2, 3, 4, 5)
 # for (number in numbers){
 #   print(number)
@@ -142,8 +144,45 @@ Write a function `mass_from_length()` that uses the equation `mass <- a * length
 -   For any other value of `species`: `mass = 25.37 * length ^ 2.49`
 
 a.  Use this function and a for loop to calculate the estimated mass for each dinosaur, store the masses in a vector, and after all of the calculations are complete show the first few items in the vector using `head()`.
+
 b.  Add the results in the vector back to the original data frame. Show the first few rows of the data frame using `head()`.
+
 c.  Calculate the mean mass for each `species` using `dplyr` (no `for` loops).
+
+    ```{r}
+    dinosaur <- read.csv("../data_raw/dinosaur_lengths.csv")
+
+    #function
+    mass_from_length <- function(length, species) {
+      if(species == "Stegosauria") {
+        mass <- 10.95 * length ^ 2.64
+      } else if(species == "Theropoda") {
+        mass <- 0.73 * length ^ 3.63
+      } else if(species == "Sauropoda") {
+        mass <- 214.44 * length ^ 1.46
+      } else {
+        mass <- 25.37 * length ^ 2.49 
+      }
+      return(mass)
+    }
+
+    #2a
+    masses <- vector(mode = "numeric", length = nrow(dinosaur))
+    for (i in 1:nrow(dinosaur)) {
+      masses[i] <- mass_from_length(dinosaur$length[i], dinosaur$species[i])
+    }
+    head(masses)
+
+    #2b
+    dinosaur$mass <- masses
+    head(dinosaur)
+
+    #2c
+    mean_mass <- dinosaur %>% 
+      group_by(species) %>% 
+      summarise(mean_mass = mean(mass, na.rm = TRUE))
+    mean_mass
+    ```
 
 ### 3. Multi-file Analysis (40 pts)
 
@@ -165,6 +204,43 @@ b.  Add code to the loop to calculate the minimum and maximum latitude in the fi
 
 Show the data frame as output.
 
+```{r}
+unzip("individual_collar_data.zip", exdir = "~")
+
+file_list <- list.files(pattern = "collar-data-.*.txt", recursive = FALSE)
+file_list
+
+#3a
+for (file in file_list) {
+  data <- read.table(file, header = TRUE)
+   plot <- ggplot(data, aes(x = long, y = lat)) +
+    geom_path() +
+    ggtitle(basename(file)) +  
+    xlab("Longitude") +
+    ylab("Latitude")
+   print(plot)
+}
+
+#3b
+results_df <- data.frame(file_name = character(), min_lat = numeric(), max_lat = numeric())
+
+for (file in file_list) {
+  data <- read.table(file, header = TRUE, sep = "\t") 
+  min_lat <- min(data$lat)
+  max_lat <- max(data$lat)
+  results_df <- bind_rows(results_df, data.frame(file_name = basename(file), min_lat = min_lat, max_lat = max_lat))
+plot <- ggplot(data, aes(x = long, y = lat)) +
+    geom_path() +
+    ggtitle(basename(file)) + 
+    xlab("Longitude") +
+    ylab("Latitude")
+  print(plot)
+}
+
+results_df
+
+```
+
 # Reflection
 
 This reflection is worth 25 points, separate from your Week 12 assignment. Reflections are graded for completion only.
@@ -177,3 +253,5 @@ Write about 5 sentences addressing *at least* one of the following questions.
 -   Other reflections about the content of the course that you would like to share.
 
 *Answer*:
+
+So far live coding in class has helped a lot when it comes to learning how to code and remembering the different functions. It's been a little challenging remembering how each function works and what inputs each function needs. It is becoming easier as we use them in class. I don't think there is anything you can do to help my learning in this class. I think we have plenty of resources to utilize if we get stuck or need additional help.
